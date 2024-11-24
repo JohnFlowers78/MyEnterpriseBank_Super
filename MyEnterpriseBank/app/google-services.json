@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1020728259393",
+    "project_id": "my-enterprise-bank",
+    "storage_bucket": "my-enterprise-bank.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1020728259393:android:112430d66ccb34c15b27c0",
+        "android_client_info": {
+          "package_name": "br.com.meusite.myenterprisebank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgvwGsmhL8CEINo01Uz3NJZO1eTIo9rEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
