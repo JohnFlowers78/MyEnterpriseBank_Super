@@ -9,6 +9,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,31 +21,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.meusite.myenterprisebank.R
-import br.com.meusite.myenterprisebank.data.AppDatabase
 import br.com.meusite.myenterprisebank.data.transacao.Transacao
-import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import br.com.meusite.myenterprisebank.data.transacao.TransacaoViewModel
 import androidx.navigation.NavHostController
 
 @Composable
-fun ExtratoListScreen(navController: NavHostController) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val transacaoDAO = db.transacaoDao()
-
-    val transacoes by transacaoDAO.listTransacoes().observeAsState(emptyList())
+fun ExtratoListScreen(
+    navController: NavHostController,
+    transacaoViewModel: TransacaoViewModel = viewModel()
+) {
+    // Substituindo a chamada ao DAO pela ViewModel
+    val transacoes by transacaoViewModel.readAllData.observeAsState(emptyList())
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF673AB7))
     ) {
-
         HeaderSection()
-
         Spacer(modifier = Modifier.height(8.dp))
-
         TransacaoList(transacoes)
     }
     FloatingButtons2(navController)
@@ -88,7 +87,6 @@ fun TransacaoList(transacoes: List<Transacao>) {
     }
 }
 
-// Composable para cada item da transação
 @Composable
 fun TransacaoItem(transacao: Transacao) {
     Column(
@@ -138,21 +136,25 @@ fun FloatingButtons2(navController: NavHostController) {
                 onClick = {
                     navController.navigate("principal")
                 },
-                modifier = Modifier.size(56.dp).padding(end = 0.dp),
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(end = 0.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_transacao),
                     contentDescription = "Transações/Extrato",
                     modifier = Modifier.size(24.dp),
-                    tint = Color.White,
+                    tint = Color.White
                 )
             }
             FloatingActionButton(
                 onClick = {
                     navController.navigate("caixinhasList")
                 },
-                modifier = Modifier.size(56.dp).padding(start = 0.dp),
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(start = 0.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "caixinhas")
 data class Caixinha(
     @PrimaryKey(autoGenerate = true)
-    val id: Int,
+    val caixinhaId: Int,
     val nome: String,
     val saldo: Double,
 //    val imgCaixinha: Int,      // recurso drawable para a imagem da caixinha

@@ -15,17 +15,17 @@ interface CaixinhaDAO {
     fun listCaixinhas(): LiveData<List<Caixinha>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addCaixinha(caixinha: Caixinha)
+    fun addCaixinha(caixinha: Caixinha)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(caixinhas: List<Caixinha>)    // Para popular uma base de dados ja pronta (facilitar testes)
+    fun insertAll(caixinhas: List<Caixinha>)    // Para popular uma base de dados ja pronta (facilitar testes)
 
     @Update
-    suspend fun updateCaixinha(caixinha: Caixinha)
+    fun updateCaixinha(caixinha: Caixinha)
 
     @Delete
-    suspend fun deleteCaixinha(caixinha: Caixinha)
+    fun deleteCaixinha(caixinha: Caixinha)
 
-    @Query("SELECT * FROM caixinhas WHERE id = :caixinhaId")
+    @Query("SELECT * FROM caixinhas WHERE caixinhaId = :caixinhaId")
     fun getCaixinhaById(caixinhaId: Int): LiveData<Caixinha>
 }

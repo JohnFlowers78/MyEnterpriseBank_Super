@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,9 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import br.com.meusite.myenterprisebank.R
-import br.com.meusite.myenterprisebank.data.AppDatabase
 import br.com.meusite.myenterprisebank.data.transacao.Transacao
-import kotlinx.coroutines.launch
+import br.com.meusite.myenterprisebank.data.user.UserViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import br.com.meusite.myenterprisebank.data.transacao.TransacaoViewModel
 
 @Composable
 fun TransferirScreen(navController: NavHostController) {
@@ -27,14 +29,13 @@ fun TransferirScreen(navController: NavHostController) {
     var saldoAtual by remember { mutableStateOf(0.0) }
 
     val context = LocalContext.current
-    val userDao = AppDatabase.getDatabase(context).userDao()
-    val transacaoDao = AppDatabase.getDatabase(context).transacaoDao()
-    val coroutineScope = rememberCoroutineScope()
+    val userViewModel: UserViewModel = viewModel() // Obtém o UserViewModel
+    val transacaoViewModel: TransacaoViewModel = viewModel() // Obtém o TransacaoViewModel
 
-    // Ação para obter o saldo
-    LaunchedEffect(Unit) {
-        saldoAtual = userDao.getSaldo()
-    }
+    // Observe o saldo atual do usuário
+    val saldoState = userViewModel.readAllData.observeAsState(listOf())
+
+    saldoAtual = saldoState.value.firstOrNull()?.saldo ?: 0.0 // Pega o saldo do primeiro usuário registrado
 
     Column(
         modifier = Modifier
@@ -64,11 +65,11 @@ fun TransferirScreen(navController: NavHostController) {
             OutlinedTextField(
                 value = chavePix,
                 onValueChange = { chavePix = it },
-                label = { Text("Nome, CPF/CNPJ ou chave Pix") },
+                label = { Text("Chave Pix (CPF/CNPJ)") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(65.dp)
-            )
+            ) // Realizar verificação de quem é o CPF e criar registro de transação entre tais Users
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -95,28 +96,22 @@ fun TransferirScreen(navController: NavHostController) {
                 onClick = {
                     val valor = valorTransfer.toDoubleOrNull()
                     if (valor != null && valor > 0) {
+                        if (saldoAtual >= valor) {
+                            val novoSaldo = saldoAtual - valor
+                            userViewModel.atualizarSaldo(novoSaldo, 1) // Atualiza saldo do usuário
 
-                        coroutineScope.launch {
+                            val transacao = Transacao(
+                                transacaoId = 0,
+                                descricao = chavePix,
+                                valor = valor,
+                                userId = 1
+                            )
+                            transacaoViewModel.addTransacao(transacao) // Adiciona a transação via ViewModel
 
-                            saldoAtual = userDao.getSaldo() // Recarrega o saldo do usuário
-
-                            if (saldoAtual >= valor) {
-                                val novoSaldo = saldoAtual - valor
-                                userDao.atualizarSaldo(novoSaldo, 1)
-
-                                val transacao = Transacao(
-                                    id = 0,
-                                    descricao = chavePix,
-                                    valor = valor,
-                                    userId = 1
-                                )
-                                transacaoDao.addTransacao(transacao)
-
-                                message = "Transferência realizada com sucesso!"
-                                navController.popBackStack()
-                            } else {
-                                message = "Saldo insuficiente para realizar a transferência."
-                            }
+                            message = "Transferência realizada com sucesso!"
+                            navController.popBackStack()
+                        } else {
+                            message = "Saldo insuficiente para realizar a transferência."
                         }
                     } else {
                         message = "Por favor, insira um valor válido para a transferência."
@@ -182,7 +177,9 @@ fun FloatingButtons4(navController: NavHostController) {
                 onClick = {
                     navController.navigate("principal")
                 },
-                modifier = Modifier.size(56.dp).padding(end = 0.dp),
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(end = 0.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(
@@ -196,7 +193,9 @@ fun FloatingButtons4(navController: NavHostController) {
                 onClick = {
                     navController.navigate("caixinhasList")
                 },
-                modifier = Modifier.size(56.dp).padding(start = 0.dp),
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(start = 0.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(

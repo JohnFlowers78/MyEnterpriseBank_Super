@@ -10,9 +10,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import br.com.meusite.myenterprisebank.data.caixinha.CaixinhaViewModel
+import br.com.meusite.myenterprisebank.data.transacao.TransacaoViewModel
+import br.com.meusite.myenterprisebank.data.user.UserViewModel
 import br.com.meusite.myenterprisebank.screen.CaixinhasGridScreen
 import br.com.meusite.myenterprisebank.screen.ExtratoListScreen
 import br.com.meusite.myenterprisebank.screen.MainScreen
@@ -24,23 +28,19 @@ import br.com.meusite.myenterprisebank.screen.cadastroLogin.EntryScreen
 import br.com.meusite.myenterprisebank.screen.cadastroLogin.LoginScreen
 import br.com.meusite.myenterprisebank.screen.transacao.DepositarScreen
 import br.com.meusite.myenterprisebank.screen.transacao.TransferirScreen
-import br.com.meusite.myenterprisebank.ui.theme.BasicNuBankTheme
-import com.facebook.appevents.AppEventsLogger
+import br.com.meusite.myenterprisebank.ui.theme.MyEnterpriseBankTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-    // Inicialize o AppEventsLogger com a instância da Application
-        AppEventsLogger.activateApp(application)
-
         enableEdgeToEdge()
         setContent {
-            BasicNuBankTheme {
+            MyEnterpriseBankTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    NuBankApp()
+                    MyEnterpriseBankApp()
                 }
             }
         }
@@ -48,19 +48,25 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun NuBankApp() {
+fun MyEnterpriseBankApp() {
     val navController = rememberNavController()
+
+    // Obtenha a instância do CaixinhaViewModel
+//    val userViewModel: UserViewModel = viewModel()
+    val caixinhaViewModel: CaixinhaViewModel = viewModel()
+//    val transacaoViewModel: TransacaoViewModel = viewModel()
+
+
     NavHost(navController = navController, startDestination = "entrada") {
         composable("entrada") { EntryScreen(navController) }
         composable("cadastro") { CadastroScreen(navController) }
         composable("login") { LoginScreen(navController) }
         composable("principal") { MainScreen(navController) }
-
         composable("depositar") { DepositarScreen(navController) }
         composable("transferir") { TransferirScreen(navController) }
         composable("extratoList") { ExtratoListScreen(navController) }
         composable("caixinhasList") { CaixinhasGridScreen(navController) }
-        composable("addCaixinha") { AddCaixinhaScreen(navController) }
+        composable("addCaixinha") { AddCaixinhaScreen(navController, caixinhaViewModel) }
         composable("detalhesCaixinha/{caixinhaId}") { backStackEntry ->
             val caixinhaId = backStackEntry.arguments?.getString("caixinhaId")
             Log.d("caixinha 1-- ", "$caixinhaId")
@@ -76,11 +82,11 @@ fun NuBankApp() {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    BasicNuBankTheme {
+    MyEnterpriseBankTheme {
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
-            NuBankApp()
+            MyEnterpriseBankApp()
         }
     }
 }

@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [User::class, Transacao::class, Caixinha::class], version = 1, exportSchema = false)
+@Database(entities = [User::class, Transacao::class, Caixinha::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase(){
 
     abstract fun transacaoDao(): TransacaoDAO
@@ -62,7 +62,7 @@ abstract class AppDatabase : RoomDatabase(){
             // Função para pré-população dos dados
             private suspend fun populateDatabase(database: AppDatabase) {
 
-                val userInicial = User(1, "José", "123.456.789-00", "+5541998532716", 2000.0, imgPerfil = R.drawable.jose)
+                val userInicial = User(1, "123.456.789-00", "josearlindo@gmail.com", "José","+5541998532716", 2000.0, imgPerfil = R.drawable.jose )
 
                 val transacoesIniciais = listOf(
                     Transacao(0, "Supermercado Pão de Açúcar", 120.50, "09/06/2024", "18:44:16", userId = 1),

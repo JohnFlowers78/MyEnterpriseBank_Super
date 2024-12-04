@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,11 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import br.com.meusite.myenterprisebank.R
-import br.com.meusite.myenterprisebank.data.AppDatabase
 import br.com.meusite.myenterprisebank.data.transacao.Transacao
-import kotlinx.coroutines.launch
+import br.com.meusite.myenterprisebank.data.transacao.TransacaoViewModel
+import br.com.meusite.myenterprisebank.data.user.UserViewModel
 
 @Composable
 fun DepositarScreen(navController: NavHostController) {
@@ -27,14 +29,12 @@ fun DepositarScreen(navController: NavHostController) {
     var message by remember { mutableStateOf("") }
     var saldoAtual by remember { mutableStateOf(0.0) }
 
-    val context = LocalContext.current
-    val userDao = AppDatabase.getDatabase(context).userDao()
-    val transacaoDao = AppDatabase.getDatabase(context).transacaoDao()
-    val coroutineScope = rememberCoroutineScope()
+    val userViewModel: UserViewModel = viewModel()
+    val transacaoViewModel: TransacaoViewModel = viewModel()
 
-    LaunchedEffect(Unit) {
-        saldoAtual = userDao.getSaldo() // ou userDao.getSaldoUsuario(1) para obter o saldo pelo ID
-    }
+    // Observe o saldo do usuário
+    val saldo = userViewModel.readAllData.observeAsState().value?.firstOrNull()?.saldo ?: 0.0
+    saldoAtual = saldo
 
     Column(
         modifier = Modifier
@@ -92,22 +92,20 @@ fun DepositarScreen(navController: NavHostController) {
             onClick = {
                 val valor = valorDeposito.toDoubleOrNull()
                 if (valor != null && valor > 0) {
+                    // Atualizar saldo no ViewModel
+                    userViewModel.atualizarSaldo(novoSaldo = saldoAtual + valor, userId = 1)
 
-                    coroutineScope.launch {
-
-                        val novoSaldo = saldoAtual + valor
-                        userDao.atualizarSaldo(novoSaldo, 1) // temos apenas um User no db ou seja, o ID do usuário é 1 <--
-
-                        val transacao = Transacao(
-                            id = 0,
-                            descricao = descricao,
-                            valor = valor,
-                            userId = 1 // temos apenas um User no db ou seja, o ID do usuário é 1 <--
-                        )
-                        transacaoDao.addTransacao(transacao)
-                        message = "Depósito realizado com sucesso!"
-                        navController.popBackStack()
-                    }
+                    // Criar transação
+                    val transacao = Transacao(
+                        transacaoId = 0,
+                        descricao = descricao,
+                        valor = valor,
+                        userId = 1 // Temos apenas um User no db
+                    )
+                    // Adicionar transação
+                    transacaoViewModel.addTransacao(transacao)
+                    message = "Depósito realizado com sucesso!"
+                    navController.popBackStack()
                 } else {
                     message = "Por favor, insira um valor válido para o depósito."
                 }

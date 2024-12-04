@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 @Entity(tableName = "transacoes")
 data class Transacao(
     @PrimaryKey(autoGenerate = true)
-    val id: Int,
+    val transacaoId: Int,
     val descricao: String,
     val valor: Double,
     val data: String = getCurrentDate(),

@@ -15,37 +15,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun EntryScreen(navController: NavHostController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF673AB7)) // Cor de fundo
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center, // Centraliza os botões verticalmente
-        horizontalAlignment = Alignment.CenterHorizontally // Centraliza horizontalmente
-    ) {
-        Button(
-            onClick = { navController.navigate("login") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp) // Espaçamento entre os botões
-        ) {
-            Text(
-                text = "Login",
-                fontSize = 18.sp
-            )
-        }
+    val auth = FirebaseAuth.getInstance()
 
-        Button(
-            onClick = { navController.navigate("cadastro") },
-            modifier = Modifier.fillMaxWidth()
+    // Verifica se há um usuário logado
+    if (auth.currentUser != null) {
+        navController.navigate("principal/${auth.currentUser?.uid}")
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF673AB7)) // Cor de fundo
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center, // Centraliza os botões verticalmente
+            horizontalAlignment = Alignment.CenterHorizontally // Centraliza horizontalmente
         ) {
-            Text(
-                text = "Cadastrar",
-                fontSize = 18.sp
-            )
+            Button(
+                onClick = { navController.navigate("login") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp) // Espaçamento entre os botões
+            ) {
+                Text(
+                    text = "Login",
+                    fontSize = 18.sp
+                )
+            }
+
+            Button(
+                onClick = { navController.navigate("cadastro") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Cadastrar",
+                    fontSize = 18.sp
+                )
+            }
         }
     }
 }

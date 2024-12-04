@@ -9,14 +9,14 @@ import br.com.meusite.myenterprisebank.data.user.User
 data class UserWithRelations(
     @Embedded val user: User,     // aqui "user" contem um objeto "User"  --> p/ usar algum atributo de User --> user.user.id
     @Relation(
-        parentColumn = "id",
-        entityColumn = "userId"
+        parentColumn = "userId",
+        entityColumn = "userId" // Mantém a relação correta com Transacao
     )
     val transacoes: List<Transacao>,
 
     @Relation(
-        parentColumn = "id",
-        entityColumn = "userId"
+        parentColumn = "userId",
+        entityColumn = "userId" // Mantém a relação correta com Caixinha
     )
     val caixinhas: List<Caixinha>
 )

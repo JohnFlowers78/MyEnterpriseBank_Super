@@ -1,54 +1,60 @@
 package br.com.meusite.myenterprisebank.screen.cadastroLogin
 
-import android.widget.Toast
+import android.app.Application
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import br.com.meusite.myenterprisebank.data.AppDatabase
-import br.com.meusite.myenterprisebank.data.user.UserDAO
-import br.com.meusite.myenterprisebank.utils.CPFUtils.isValidCPF
-import br.com.meusite.myenterprisebank.utils.isValidCPF
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.userProfileChangeRequest
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import br.com.meusite.myenterprisebank.data.user.login_cadastro.CadastroViewModel
+import br.com.meusite.myenterprisebank.data.user.login_cadastro.CadastroViewModelFactory
 
 @Composable
 fun CadastroScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val userDao = AppDatabase.getDatabase(context).userDao()
-    val firebaseAuth = FirebaseAuth.getInstance()
+    val cadastroViewModel: CadastroViewModel = viewModel(factory = CadastroViewModelFactory(context.applicationContext as Application))
 
+    var nomeCompleto by remember { mutableStateOf("") }
     var cpfInput by remember { mutableStateOf("") }
     var emailInput by remember { mutableStateOf("") }
+    var celularInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
     var confirmPasswordInput by remember { mutableStateOf("") }
+
+    val mensagemErro by cadastroViewModel.mensagemErro.observeAsState("")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top
     ) {
-        Text("Cadastro", style = MaterialTheme.typography.headlineMedium)
+        Text("Cadastro de Usuário", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
+
+        TextField(
+            value = nomeCompleto,
+            onValueChange = { nomeCompleto = it },
+            label = { Text("Nome Completo") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
             value = cpfInput,
             onValueChange = { cpfInput = it },
             label = { Text("CPF") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -56,8 +62,17 @@ fun CadastroScreen(navController: NavHostController) {
         TextField(
             value = emailInput,
             onValueChange = { emailInput = it },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            label = { Text("E-mail") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = celularInput,
+            onValueChange = { celularInput = it },
+            label = { Text("Celular") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -82,74 +97,20 @@ fun CadastroScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                if (cpfInput.isBlank() || emailInput.isBlank() || passwordInput.isBlank() || confirmPasswordInput.isBlank()) {
-                    Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
-                } else if (!isValidCPF(cpfInput)) {
-                    Toast.makeText(context, "CPF inválido", Toast.LENGTH_SHORT).show()
-                } else if (passwordInput != confirmPasswordInput) {
-                    Toast.makeText(context, "As senhas não coincidem", Toast.LENGTH_SHORT).show()
+                if (passwordInput == confirmPasswordInput) {
+                    cadastroViewModel.cadastrarUsuario(nomeCompleto, cpfInput, emailInput, celularInput, passwordInput)
                 } else {
-                    registerUser(
-                        firebaseAuth,
-                        userDao,
-                        cpfInput,
-                        emailInput,
-                        passwordInput,
-                        navController
-                    )
+                    cadastroViewModel.mensagemErro.value = "As senhas não coincidem."
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Cadastrar")
         }
-    }
-}
 
-fun registerUser(
-    firebaseAuth: FirebaseAuth,
-    userDao: UserDAO,
-    cpf: String,
-    email: String,
-    password: String,
-    navController: NavHostController
-) {
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            firebaseAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val user = firebaseAuth.currentUser
-                        user?.updateProfile(
-                            userProfileChangeRequest {
-                                displayName = cpf
-                            }
-                        )
-                        // Salvar no Room DB
-                        userDao.insertUser(UserEntity(cpf = cpf, email = email))
-                        withContext(Dispatchers.Main) {
-                            navController.navigate("loginScreen") {
-                                popUpTo("cadastroScreen") { inclusive = true }
-                            }
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                navController.context,
-                                "Erro ao cadastrar: ${task.exception?.localizedMessage}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    navController.context,
-                    "Erro inesperado: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+        if (mensagemErro.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(mensagemErro, color = MaterialTheme.colorScheme.error)
         }
     }
 }

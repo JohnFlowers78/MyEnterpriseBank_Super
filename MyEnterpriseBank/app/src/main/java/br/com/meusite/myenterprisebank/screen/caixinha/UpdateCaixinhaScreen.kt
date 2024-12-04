@@ -1,5 +1,6 @@
 package br.com.meusite.myenterprisebank.screen.caixinha
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -18,32 +19,27 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import br.com.meusite.myenterprisebank.R
 import br.com.meusite.myenterprisebank.data.AppDatabase
+import br.com.meusite.myenterprisebank.data.caixinha.CaixinhaViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun UpdateCaixinhaScreen(
     navController: NavController,
-    caixinhaId: Int
+    caixinhaId: Int,
+    viewModel: CaixinhaViewModel = CaixinhaViewModel(LocalContext.current.applicationContext as Application)
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-
-    val caixinhaLiveData = db.caixinhaDao().getCaixinhaById(caixinhaId)
-    val caixinha by caixinhaLiveData.observeAsState()
-
-    val userWithRelations by db.userDao().getUserWithRelations(1).observeAsState()
-    val userSaldoAtual = userWithRelations?.user?.saldo ?: 0.0
+    val caixinha by viewModel.getCaixinhaById(caixinhaId).observeAsState()
+    val userSaldoAtual = 1000.0 // Exemplo, adapte para obter o saldo do User adequadamente
 
     var updatedName by remember { mutableStateOf(TextFieldValue("")) }
     var updatedValor by remember { mutableStateOf(TextFieldValue("")) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Atualiza os campos de texto com os valores da caixinha quando ela é carregada
+    // Atualiza os campos de texto com os valores da caixinha
     LaunchedEffect(caixinha) {
-        if (caixinha != null) {
-            updatedName = TextFieldValue(caixinha!!.nome)
-            updatedValor = TextFieldValue(caixinha!!.saldo.toString())
+        caixinha?.let {
+            updatedName = TextFieldValue(it.nome)
+            updatedValor = TextFieldValue(it.saldo.toString())
         }
     }
 
@@ -52,9 +48,7 @@ fun UpdateCaixinhaScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-
         TopBar5(saldo = "R$ ${"%.2f".format(userSaldoAtual)}")
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Conteúdo da tela de atualização
@@ -64,90 +58,51 @@ fun UpdateCaixinhaScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Nome da Caixinha",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
             OutlinedTextField(
                 value = updatedName,
                 onValueChange = { updatedName = it },
                 label = { Text("Insira o Nome da Caixinha") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused && updatedName.text == caixinha?.nome) {
-                            updatedName = TextFieldValue("")
-                        }
-                    }
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Valor",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
 
             OutlinedTextField(
                 value = updatedValor,
                 onValueChange = { updatedValor = it },
                 label = { Text("Insira um novo valor em sua caixinha") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused && updatedValor.text == caixinha?.saldo.toString()) {
-                            updatedValor = TextFieldValue("")
-                        }
-                    }
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        val valorDouble = updatedValor.text.toDoubleOrNull()
-                        if (valorDouble != null && caixinha != null) {
-                            val diferenca = valorDouble - caixinha!!.saldo
-                            if (diferenca > 0) {
-                                if (userSaldoAtual >= diferenca) {
-                                    // Atualize a caixinha e ajuste o saldo do usuário
-                                    db.caixinhaDao().updateCaixinha(
-                                        caixinha!!.copy(nome = updatedName.text, saldo = valorDouble)
-                                    )
-                                    db.userDao().atualizarSaldo(userSaldoAtual - diferenca, userWithRelations?.user?.id ?: 1)
-                                    navController.popBackStack()
-                                } else {
-                                    errorMessage = "Saldo insuficiente para aumentar o valor da caixinha."
-                                }
-                            } else {
-                                val valorRestante = userSaldoAtual - diferenca
-                                db.caixinhaDao().updateCaixinha(
-                                    caixinha!!.copy(nome = updatedName.text, saldo = valorDouble)
-                                )
-                                db.userDao().atualizarSaldo(valorRestante, userWithRelations?.user?.id ?: 1)
-                                navController.popBackStack()
-                            }
+                    val valorDouble = updatedValor.text.toDoubleOrNull()
+                    if (valorDouble != null && caixinha != null) {
+                        val diferenca = valorDouble - caixinha!!.saldo
+                        if (diferenca > 0 && userSaldoAtual >= diferenca) {
+                            viewModel.updateCaixinha(
+                                caixinha!!.copy(nome = updatedName.text, saldo = valorDouble)
+                            )
+                            navController.popBackStack()
+                        } else if (diferenca <= 0) {
+                            viewModel.updateCaixinha(
+                                caixinha!!.copy(nome = updatedName.text, saldo = valorDouble)
+                            )
+                            navController.popBackStack()
                         } else {
-                            errorMessage = "Valor inválido ou caixinha não encontrada."
+                            errorMessage = "Saldo insuficiente para aumentar o valor da caixinha."
                         }
+                    } else {
+                        errorMessage = "Valor inválido ou caixinha não encontrada."
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Atualizar")
             }
 
-            // Exibir mensagem de erro, se houver
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
@@ -156,11 +111,10 @@ fun UpdateCaixinhaScreen(
                 )
             }
         }
-
-        // Floating Buttons para navegação
         FloatingButtons8(navController)
     }
 }
+
 
 @Composable
 fun TopBar5(saldo: String) {

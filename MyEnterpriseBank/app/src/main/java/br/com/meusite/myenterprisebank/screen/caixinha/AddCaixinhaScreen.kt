@@ -16,10 +16,11 @@ import androidx.navigation.NavController
 import br.com.meusite.myenterprisebank.R
 import br.com.meusite.myenterprisebank.data.AppDatabase
 import br.com.meusite.myenterprisebank.data.caixinha.Caixinha
+import br.com.meusite.myenterprisebank.data.caixinha.CaixinhaViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun AddCaixinhaScreen(navController: NavController) {
+fun AddCaixinhaScreen(navController: NavController, caixinhaViewModel: CaixinhaViewModel) {
     var nomeNewCaixinha by remember { mutableStateOf("") }
     var valorInicial by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
@@ -27,7 +28,6 @@ fun AddCaixinhaScreen(navController: NavController) {
 
     val context = LocalContext.current
     val userDao = AppDatabase.getDatabase(context).userDao()
-    val caixinhaDao = AppDatabase.getDatabase(context).caixinhaDao()
     val coroutineScope = rememberCoroutineScope()
 
     // Ação para obter o saldo
@@ -96,9 +96,14 @@ fun AddCaixinhaScreen(navController: NavController) {
                         val valorDouble = valorInicial.toDoubleOrNull()
                         if (valorDouble != null) {
                             if (saldoAtual >= valorDouble) {
-                                val novaCaixinha = Caixinha(id = 0, nome = nomeNewCaixinha, saldo = valorDouble, userId = 1)
+                                val novaCaixinha = Caixinha(
+                                    caixinhaId = 0,
+                                    nome = nomeNewCaixinha,
+                                    saldo = valorDouble,
+                                    userId = 1
+                                )
 
-                                caixinhaDao.addCaixinha(novaCaixinha)
+                                caixinhaViewModel.addCaixinha(novaCaixinha)
                                 userDao.atualizarSaldo(saldoAtual - valorDouble, 1)
 
                                 message = "Caixinha criada com sucesso!"

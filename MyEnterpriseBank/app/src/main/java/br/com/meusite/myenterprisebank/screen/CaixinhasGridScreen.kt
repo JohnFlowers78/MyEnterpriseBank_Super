@@ -15,24 +15,22 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.LiveData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import br.com.meusite.myenterprisebank.R
-import br.com.meusite.myenterprisebank.data.AppDatabase
 import br.com.meusite.myenterprisebank.data.caixinha.Caixinha
+import br.com.meusite.myenterprisebank.data.caixinha.CaixinhaViewModel
 
 @Composable
-fun CaixinhasGridScreen(navController: NavHostController) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val caixinhasLiveData: LiveData<List<Caixinha>> = db.caixinhaDao().listCaixinhas()
-    val caixinhas by caixinhasLiveData.observeAsState(emptyList())
-
+fun CaixinhasGridScreen(
+    navController: NavHostController,
+    caixinhaViewModel: CaixinhaViewModel = viewModel()
+) {
+    val caixinhas by caixinhaViewModel.readAllData.observeAsState(emptyList())
 
     val saldoTotal = caixinhas.sumOf { it.saldo }
 
@@ -103,7 +101,7 @@ fun CaixinhasGrid(caixinhas: List<Caixinha>, navController: NavHostController) {
             CaixinhaItem(
                 caixinha = caixinha,
                 onClick = {
-                    navController.navigate("detalhesCaixinha/${caixinha.id}")
+                    navController.navigate("detalhesCaixinha/${caixinha.caixinhaId}")
                 }
             )
         }
@@ -117,10 +115,10 @@ fun CaixinhaItem(caixinha: Caixinha, onClick: () -> Unit) {
             .width(100.dp)
             .padding(8.dp)
             .clickable { onClick() },
-    horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.default_image),                //  br.com.meusite.myenterprisebank.
+            painter = painterResource(id = R.drawable.default_image),
             contentDescription = "img_caixinha",
             modifier = Modifier
                 .size(80.dp)
@@ -153,21 +151,21 @@ fun FloatingButtons3(navController: NavHostController) {
                 onClick = {
                     navController.navigate("principal")
                 },
-                modifier = Modifier.size(56.dp).padding(end = 0.dp),
+                modifier = Modifier.size(56.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_transacao),
                     contentDescription = "Transações/Extrato",
                     modifier = Modifier.size(24.dp),
-                    tint = Color.White,
+                    tint = Color.White
                 )
             }
             FloatingActionButton(
                 onClick = {
                     navController.navigate("caixinhasList")
                 },
-                modifier = Modifier.size(56.dp).padding(start = 0.dp),
+                modifier = Modifier.size(56.dp),
                 containerColor = Color(0xFF9F30D5)
             ) {
                 Icon(

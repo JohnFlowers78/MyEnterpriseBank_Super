@@ -17,15 +17,9 @@
         android:theme="@style/Theme.MyEnterpriseBank"
         tools:targetApi="31">
 
-        <!-- Meta-data para o Facebook -->
-        <meta-data
-            android:name="com.facebook.sdk.ApplicationId"
-            android:value="@string/facebook_app_id" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.MyEnterpriseBank">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

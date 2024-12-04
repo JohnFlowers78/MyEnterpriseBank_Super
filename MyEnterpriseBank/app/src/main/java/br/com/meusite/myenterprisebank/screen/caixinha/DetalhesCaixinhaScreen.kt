@@ -1,5 +1,6 @@
 package br.com.meusite.myenterprisebank.screen.caixinha
 
+import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,28 +18,24 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import br.com.meusite.myenterprisebank.R
-import br.com.meusite.myenterprisebank.data.AppDatabase
-import kotlinx.coroutines.launch
+import br.com.meusite.myenterprisebank.data.caixinha.CaixinhaViewModel
 
 @Composable
 fun DetalhesCaixinhaScreen(navController: NavHostController, caixinhaId: String?) {
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
+    val viewModel = CaixinhaViewModel(LocalContext.current.applicationContext as Application)
 
-    val caixinha by db.caixinhaDao().getCaixinhaById(caixinhaId?.toInt() ?: -1).observeAsState()
-    var saldoAtual by remember { mutableStateOf(0.0) }
+    // Observar a caixinha específica
+    val caixinha by viewModel.getCaixinhaById(caixinhaId?.toInt() ?: -1).observeAsState()
+
+    // Observar todas as caixinhas para somar o saldo
+    val caixinhas by viewModel.readAllData.observeAsState(emptyList())
+    val saldoAtual = caixinhas.sumOf { it.saldo }
+
     var message by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        saldoAtual = db.userDao().getSaldo()
-    }
-
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
-
         TopBar4(saldo = "R$ ${"%.2f".format(saldoAtual)}")
 
         Column(
@@ -49,7 +46,6 @@ fun DetalhesCaixinhaScreen(navController: NavHostController, caixinhaId: String?
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             caixinha?.let {
-                // Imagem da Caixinha
                 Image(
                     painter = painterResource(id = R.drawable.default_image),
                     contentDescription = "Imagem selecionada",
@@ -74,28 +70,18 @@ fun DetalhesCaixinhaScreen(navController: NavHostController, caixinhaId: String?
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botões de Ação
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Button(onClick = {
-                        coroutineScope.launch {
-                            val saldoCaixinha = it.saldo
-                            val saldoUsuario = db.userDao().getSaldo()
-
-                            // Zera o saldo da caixinha e atualiza o saldo do usuário
-                            db.caixinhaDao().updateCaixinha(it.copy(saldo = 0.00))
-                            db.userDao().atualizarSaldo(saldoUsuario + saldoCaixinha)
-                        }
+                        viewModel.updateCaixinha(it.copy(saldo = 0.00))
                     }) {
                         Text("Resgatar")
                     }
 
                     Button(onClick = {
-                        coroutineScope.launch {
-                            message = "Este botão AINDA não está funcional!"
-                        }
+                        message = "Este botão AINDA não está funcional!"
                     }) {
                         Text("Guardar")
                     }
@@ -127,15 +113,12 @@ fun DetalhesCaixinhaScreen(navController: NavHostController, caixinhaId: String?
                     }) {
                         Text("Atualizar...")
                     }
-                    // Botão Deletar Caixinha
                     Button(
                         onClick = {
-                            coroutineScope.launch {
-                                caixinha?.let {
-                                    db.caixinhaDao().deleteCaixinha(it)
-                                }
-                                navController.popBackStack()
+                            caixinha?.let {
+                                viewModel.deleteCaixinha(it)
                             }
+                            navController.popBackStack()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {

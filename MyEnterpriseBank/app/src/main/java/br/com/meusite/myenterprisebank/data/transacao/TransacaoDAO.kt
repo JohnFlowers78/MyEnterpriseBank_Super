@@ -9,12 +9,12 @@ import androidx.room.Query
 @Dao
 interface TransacaoDAO {
 
-    @Query("SELECT * FROM transacoes ORDER BY id DESC")
+    @Query("SELECT * FROM transacoes ORDER BY transacaoId DESC")
     fun listTransacoes(): LiveData<List<Transacao>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addTransacao(transacao: Transacao)
+    fun addTransacao(transacao: Transacao)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(transacoes: List<Transacao>)          // Inserção de múltiplos itens   -->   Para popular a base de dados
+    fun insertAll(transacoes: List<Transacao>)          // Inserção de múltiplos itens   -->   Para popular a base de dados
 }
